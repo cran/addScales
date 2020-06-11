@@ -6,8 +6,9 @@
    Add Scaling Information to Panels in Multi-Panel Trellis Plots
 }
 \description{
-   Adds a midline and upper and lower horizontal and/or vertical scale lines to all
-   panels. Mostly useful when the \code{relation = "free"} option is used in the
+   Adds a midline and upper and lower horizontal and/or vertical scale lines
+   or shaded regions to all panels. Mostly useful when the
+   \code{relation = "free"} option is used in the
    \code{scales} list to avoid loss of detail in plots from data that vary in
    location and scale from panel to panel.
 }
@@ -31,17 +32,18 @@
    }
   \item{scaleline}{
    A two component list with component names "h" and "v". The
-   "h" component is for (h)orizontal scale lines and "v" is
+   "h" component is for (h)orizontal scale lines/regions and "v" is
    for(v)ertical. Each of these must be a single logical or numeric value
    (and can be mixed in the list, of course). \code{TRUE} means: use a
    calculated default; \code{FALSE} means: don't plot scale lines for
    this component; and a numeric value means: use this value. The calculated
-   or user-supplied value is the distance between the midline and scale lines.
+   or user-supplied value is the distance between the midline and scale lines
+   = 1/2 the height/width of the shaded region.
    A numeric value of 0 is interpreted as \code{FALSE} -- don't draw.
    However, see the \strong{Details} section below for abbreviated versions that
    are also accepted.
 
-   \bold{Note:} Scale lines are only meaningful for \code{"numeric"} data as defined
+   \bold{Note:} Scale lines/regions are only meaningful for \code{"numeric"} data as defined
    by \code{isTRUE(is.numeric())}. The corresponding \code{scaleline} component --
    "h" for y-axis data and "v" for x-axis data -- is silently set to \code{FALSE} for
    anything else.
@@ -55,14 +57,13 @@
    further details.
    }
 
-  \item{ndig.legend}{
-   Named or unnamed pair of integer arguments, or a single integer that will be
-   replicated. The names must be (and are assumed to be if unnamed) "h" and
-   "v" \emph{in that order} and give the number of \emph{significant}
-   digits to show in the default legend for the corresponding scale lines.
-   Non-integer values are rounded to integer, and values outside the range
-   of 0 to 15 digits are converted to 2.
-
+   \item{ndig.legend}{
+      Named or unnamed pair of integer arguments, or a single integer that will be
+      replicated. The names must be (and are assumed to be if unnamed) "h" and
+      "v" \emph{in that order} and give the number of \emph{significant}
+      digits to show in the default legend for the corresponding scale lines/region.
+      Non-integer values are rounded to integer, and values outside the range
+      of 0 to 15 digits are converted to 2.
    }
   \item{legend.aes}{
       List of \emph{aesthetics} of the legend text: \code{cex, font,
@@ -81,22 +82,25 @@
       standard trellis/grid functionality.
    }
   \item{\dots}{
-     Further arguments, passed down to the \code{panelFUN} function.
+     Further arguments, controlling \emph{aesthetics} of the lines, labels, and/or
+     fill regions such as color, line width, color palette, line type, etc., passed down to the
+     \code{panelFUN} function. See \code{\link{panel.addScales}} for details for the
+     default panel function.
    }
 }
 
 \details{
-   As a convenience, some abbreviated versions of \code{scaleline} and
-   \code{legend} logical arguments can be used instead of the full versions described
-   above.
-   The abbreviated versions will be translated into the full versions for use by
-   other functions such as \code{\link{scaleline}} and \code{update.scaledTrellis}.
+   As a convenience, abbreviated versions of \code{scaleline} and
+   \code{legend} logical arguments can be used instead of the full versions
+   described above.The abbreviated versions will be translated into the full
+   versions for use by other functions such as \code{scaleline} and
+   \code{update.scaledTrellis}.
 
    Specifically, a single value of \code{TRUE} or \code{FALSE} is replicated to
    both components of the argument. Thus \code{scaleline = FALSE} aborts the
    function, since it says not to add scales in either direction. \code{
    legend = FALSE} is fine, because it specifies only that legends be omitted.
-   See the \bold{Legend Details} section below for why this might be useful.
+   See the \bold{Legend Specification Details} section below for why this might be useful.
 
    If an unnamed list with two components (of the correct form) are given, they are
    assumed to be in the order \code{c("h","v")}. If a single named component with
@@ -105,10 +109,10 @@
    \code{list(h = FALSE, v = TRUE)} are all equivalent. A list with a single
    unnamed component raises an error.
 
-   The default \code{scaleline} calculation assures that all lines fall within the
-   axis limits of all panels. A user-supplied \code{scaleline} that fails this
-   criterion will raise a warning and result in some panels with missing scale
-   lines.
+   The default \code{scaleline} calculation assures that all lines/regions fall within the
+   axis limits of all panels. A (typically user-supplied) \code{scaleline}
+   that fails this criterion will raise a warning and result in some
+   panels with missing scale lines when \code{scaleType = "line"}.
 }
 
 
@@ -116,23 +120,36 @@
    An object of class \code{c("scaledTrellis","trellis")} if successful.
    Because it inherits from class \code{"trellis"}, it can be saved
    and/or (automatically) plotted as usual.\cr
+
    \code{NULL} invisibly if an error occurs.
+
+   The \code{scaledTrellis} object is the original \code{trellis} object list
+   with its \code{panel} and \code{legend} components modified to add the
+   scaling information. A new \code{addScales} component is also added
+   that is itself a list with (at least) two components named "orig" and "args".
+   The first of these contains the original
+   \code{panel} and \code{legend} components of \code{obj}. The second
+   contains either the names and values of the arguments in the call or the computed
+   values of those arguments. The most important of these is the \code{scaleline}
+   value, which can be extracted using the \code{\link{scaleline}} function by users
+   who wish to construct their own scale line legends.The remaining values are used
+   by the update method for \code{scaledTrellis} objects.
 }
 
-\section{Legend Details}{
+\section{Legend Specification Details}{
    The default legend is meant to be simple but serviceable. If there are scale lines
    in both directions, it will space them horizontally for \code{"top"} and \code{
-      "bottom"} locations and vertically for \code{"right"} and \code{"left"} to
+   "bottom"} locations and vertically for \code{"right"} and \code{"left"} to
    minimize the space they occupy.
 
    A user-supplied legend component can be given in two forms: either as a (quoted)
-   UTF-8 character string, like this: "Scale lines are at 10\enc{°}{ degrees} ";
+   UTF-8 character string, like this: "Scale lines are at \enc{±}{ +/-}10\enc{°}{ degrees} ";
    or as a so-called \code{language} object. The latter allows the legend to use the
    (shortened to the \code{ndig.legend} number of digits) \code{scaleline} value.
    The former does not.
 
    A detailed discussion of \code{language} objects is beyond the scope of this Help
-   page, but a simple example provides a template that should often suffice. Suppose,
+   page, but a simple example provides a template that should usually suffice. Suppose,
    instead of the default, the desired legend is:
 
       \verb{     Scale lines are at} \enc{±}{+/-} \verb{xxx}\enc{°}{ degrees},
@@ -165,10 +182,9 @@
    arbitrary \code{scaleline} displays as text or graphical objects (so-called
    \emph{grobs}) of any kind -- is simply to run
    \code{addScales} with \code{legend = FALSE} and extract the
-   \code{scaleline} values from the resulting object with the \code{scaleline()}
-   function. The values can then used in any construction the user wishes to create.
+   \code{scaleline} value(s) from the resulting object with the \code{scaleline()}
+   function. The value(s) can then be used in any construction the user wishes to create.
 }
-
 
 \author{
 Bert Gunter \email{bgunter.4567@gmail.com}
@@ -183,7 +199,6 @@ Bert Gunter \email{bgunter.4567@gmail.com}
 }
 
 \examples{
-
 ###### Artificial example to show why addScales() might be useful and
 ###### how it works
 ##
@@ -191,12 +206,16 @@ Bert Gunter \email{bgunter.4567@gmail.com}
 ###### Create a data set whose panels have different
 ###### centers and scales for y
 x <- rep(0:10, 4)
+
 scaling <- rep(c(1, 2, 5, 10), e = 11)
+
 y <- sin(pi*x/10)*scaling + scaling ## add some structure
+
 f <- factor(rep(LETTERS[1:4], e = 11))
 
 ## Now add noise proportional to data mean (= constant CV)
 set.seed(91834)
+
 y <- y + rnorm(44,sd = scaling/3)
 
 ## Plot this with the default "same" scaling and a loess curve
@@ -207,6 +226,7 @@ xyplot(y ~ x| f, layout = c(4,1), col = "darkblue",
            panel.points(...)
            panel.loess(..., span = .6, col.line = "blue")
         })
+
 ##
 ## Because of the different scaling, it's somewhat difficult to
 ## see the common panel data behavior. With relation = "free", it
@@ -214,6 +234,7 @@ xyplot(y ~ x| f, layout = c(4,1), col = "darkblue",
 ##
 trellis.par.set(plot.symbol = list(col = "darkblue"),
                plot.line = list(col = "darkblue"))
+
 xyplot(y ~ x| f, layout = c(4,1),
        scales = list(alternating = 1, tck = c(1,0),
                      y = list(relation = "free")),
@@ -221,6 +242,7 @@ xyplot(y ~ x| f, layout = c(4,1),
           panel.points(...)
           panel.loess(..., span = .6, col.line = "blue")
        })
+
 ##
 ##  Unfortunately, the y-scales take up a lot of space and are
 ##  difficult to read. With more panels, they would completely
@@ -236,6 +258,7 @@ freeplot <- xyplot(y ~ x| f, layout = c(4,1),
           })
 
 addScales(freeplot) ## using defaults
+
 ##
 ## The labeled midline allows location comparison among the panels.
 ## The fixed distance from the dashed scale lines to the midline are given
@@ -250,9 +273,18 @@ addScales(freeplot) ## using defaults
 ##
  enhanced <- addScales(freeplot)
  enhanced
+
+## Further panel options, which we use the update() method to change,
+## allow for color coded scale regions and midlines:
+##
+#### Warning: Nothing may display if your graphics device does not support
+## alpha transparency
+
+ update(enhanced, scaleType = "region", colCode = "r")
+
 ##
 ## cleanup
-rm(scaling, x, y, f, freeplot)
+rm(scaling, x, y, f, freeplot, enhanced)
 ##
 ########  Some real examples   #############
 ############################################
@@ -260,8 +292,6 @@ rm(scaling, x, y, f, freeplot)
 ## Historical daily temperatures for Chicago, New York, and San Francisco.
 data(CHITemps, NYCTemps, SFTemps)
 
-## First need to prepare the data for plotting
-## Want to plot monthly mean temepratures by month over time (years)
 preprocess.temps <- function(d){
       meanTemp <- with(d, (TMAX + TMIN)/2)
       Month <- months(as.Date(d$DATE))
@@ -272,55 +302,76 @@ preprocess.temps <- function(d){
       names(z)[3] <- "meanTemp"
       z
 }
+
 ## Create a list containing the preprocessed data for all 3 cities
 plotdat <- lapply(
    list(CHI = CHITemps, NYC = NYCTemps, SF = SFTemps),
    preprocess.temps)
 
 ## Consider NYC. Because of monthly temperature variation, monthly temperature
-## histories are mostly whitespace with the default relation =
+## histories are mostly whitespace with the default relation = "same".
+## Note also the use of the prepanel.trim function with defaults to remove
+## extreme y values.
+##
+## Consider New York City
 nyctemps <-
    xyplot(meanTemp ~ Year|Month, type = "l", layout = c(3,4),
           data = plotdat[[2]],
           as.table = TRUE,
           between = list(x=1, y=0),
+          ## reduce strip size
+          par.strip.text = list(lines = .8, cex = .7),
+          ## remove blank space for top axis
+          par.settings = list(layout.heights = list(axis.top = 0)),
+          prepanel = prepanel.trim, ## to remove possible extreme values
           panel = function(...){
              panel.grid(v = -1, h = 0, col = "gray70")
              panel.xyplot(...)
-             panel.loess(..., span = .5, col = "darkred")
+             panel.loess(..., span = .5, col = "darkred",
+             lwd = 1.5)
           },
           scales = list(axs = "i", alternating = 1, tck = c(1,0)),
           xlab = "Year",
           ylab = "Average Temperature (\u00B0F)",
           main = "Mean Monthly Historical Temperatures in NYC"
    )
+
 nyctemps
 
 ## Now try it with y-scale = "free' and addScales
 ##
-addScales(
-   update(nyctemps, scales = list(axs = "i", alternating = 1,
-                                  tck = c(1,0),
-                                  y = list(relation = "free", draw = FALSE))
-                                  )
-)
-##
-## Not only is the historical temperature trend as the city
-## built up and modernized (more concrete and asphalt,
-## people, heat sources, etc.) clearer -- and quantified by the
-## legend and scale lines -- but the scale lines also show
+nyctemps <- update(nyctemps,
+   scales = list(axs = "i", alternating = 1,
+   tck = c(1,0),y = list(relation = "free", draw = FALSE)))
+
+addScales(nyctemps)
+
+## The historical temperature trend as the city
+## built up and modernized (more concrete and asphalt,people,
+## heat sources, etc.) is clearer and quantified by the
+## legend and scale lines; and the scale lines also show
 ## that winter temperatures are clearly more variable than summer.
 ## This was almost undetectable in the previous plot.
 
-## You can repeat the exercise with the other two cities if you like.
+## The same plot using region shading instead of scale lines.
+## Warning: May not display if your graphics device does not support
+## alpha transparency
+
+addScales(nyctemps, scaleType = "region")
+
+## ... and using color coding for midlines and regions to better visually
+## distinguish their values...
 ##
-####
+addScales(nyctemps, scaleType = "region", colCode = "r")
+
+## You can repeat the exercise with the other two cities if you like.
 ## cleanup
-rm(nyctemps)
+rm(nyctemps, preprocess.temps, plotdat)
 
 #######  Historical Crime Data #####
 
 data(USAcrime)
+
 ## We explore the relationship beween property and violent crime over time.
 ## Point transparency via the 'alpha' setting is used to code year
 ## and the violent vs. property crime relationship is trellised by state
@@ -329,14 +380,17 @@ data(USAcrime)
 ## First with scales = "same", the default..
 
 state.smpl <- c("CA","TX","GA","CO","VA","FL","NY","OH","MO","UT","MA","TN")
+
 wh <- USAcrime$State \%in\% state.smpl
+
 pcols <- hcl.colors(55, rev = TRUE)
+
 crm <-xyplot(allViolent ~ allProperty|State, data = USAcrime[wh,],
              subscripts = TRUE, as.table = TRUE,
              layout = c(4,3), type = c("p", "g"),
              cex= .75,  pch = 19,
              col = pcols[USAcrime[wh,'Year'] -1959],
-             par.strip.text = list(lines = .7, cex = .7),
+             par.strip.text = list(lines = .8, cex = .7),
              between = list(x = 1),
              scales = list(axs="i",alternating =1, tck = c(1,0)),
              xlab = "Property Crime Rate (incidents/100,000 population)",
@@ -352,21 +406,25 @@ crm
 crm2 <- update(crm, type = "p",
             scales = list(axs="i", relation = "free", draw = FALSE))
 
-## Add scales for both x and y
-addScales(crm2, scaleline = TRUE)
+## Add scales for both x and y and color code midlines
+addScales(crm2, scaleline = TRUE, colCode = "m")
 
-## Some interesting features that can be readily discerned (were they
-## visible in the previous plots?):
+## Some features to note:
 ##  1. As one might expect, violent and property crime rates are
-##  (more or less linearly) correlated.
+##   correlated.
 ##
 ##  2. Crime rates first increased, peaked, and then decreased over time.
 ##
 ##  3. For most states there appears to be a kind of 'hysteresis':
-##  the trajectory of the relationship when crime decreased
-##  is shifted up (higher violent crime rate for the same property
-##  rate) from that when it increased. This could have been due to a
-##  change in reporting procedures, for example.
+##  the trajectory of the crime decrease is shifted up (higher violent
+##  crime rate for the same property rate) from when it increased.
+##  This could have been due to a change in reporting procedures,
+##  over time, for example.
+##
+##  4. The midline colors and labels show that NY has the highest
+##  violent crime rate, but a modest property crime rate: Tennessee
+##  has a middling violent crime rate but the lowest (with VA) property
+##  crime rate.
 ##
 ##  cleanup
    rm( state.smpl, wh, pcols, crm, crm2)

@@ -22,7 +22,7 @@ using the \code{relation = "free"} option in the \code{scales} argument. Unfortu
 
 \code{addScales} addresses this problem by layering minimal location/scale information directly onto the panels. The intent is to save axis space without obscuring the panel data, but still allow the viewer to decode the information to compare the panels.
 
-A simple API facilitates this task. In addition to the main \code{addScales} functions, a generic with an \code{addScale.trellis} method, there is an \code{update} method to allow the user to easily experiment with and customize the display. A few other functions provide some additional flexibility. Users
+A simple API facilitates this task. In addition to the main \code{addScales} functions, a generic with an \code{addScales.trellis} method, there is an \code{update} method to allow the user to easily experiment with and customize the display. A few other functions provide some additional flexibility. Users
 desiring other capabilities should contact the author/maintainer with their requests.
 }
 \author{

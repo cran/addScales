@@ -6,7 +6,9 @@
 }
 \description{
    Updates both \code{addScale} parameters, including those passed to the \code{panelFUN},
-   and components of the original \code{trellis} object.
+   and components of the original \code{trellis} object. Note that this may produce
+   undesirable results if the axis limits are changed via updating trellis
+   parameters without updating scaleline limits. See the examples.
 }
 \usage{
    \method{update}{scaledTrellis}(object, \dots)
@@ -71,21 +73,69 @@ ads.1 ## plot it
 
 ## Change the plotting symbol, add a fitted line to the panel,
 ## remove the grid, change the layout,
-## make the midline color black, thicken the scaleline dashes,
-## and put the legend on the right.
+## color code the midline and use shaded scale regions instead
+## of lines, and put the legend on the right.
 ##
 ## Note that the arguments can be given in any order.
 ## (automatically plotted since no return value)
 update(ads.1, pch = 19,layout = c(3,4), type = "p",
-       col.midline = "black", legend.loc = "right",
+       colCode = "m", scaleType = "reg", legend.loc = "right",
        panel = function(x, y,  ...){
           panel.xyplot(x, y,...)
           panel.abline(reg = lm(y ~ x), col = "darkred", lwd = 2)
-       },
-       scaleline.aes = list(lwd = 2)
+       }
 )
+
+## example of problems that can occur when updating trellis scales without
+## updating addScales.
+##
+## Example from addScales() help:
+x <- rep(0:10, 4)
+scaling <- rep(c(1, 2, 5, 10), e = 11)
+y <- sin(pi*x/10)*scaling + scaling ## add some structure
+f <- factor(rep(LETTERS[1:4], e = 11))
+
+## Now add noise proportional to data mean (= constant CV)
+set.seed(91834)
+y <- y + rnorm(44,sd = scaling/3)
+
+## Plot this with the default "same" scaling and a loess curve
+
+samescale <- xyplot(y ~ x| f, layout = c(4,1), col = "darkblue",
+                    scales = list(alternating = 1, tck = c(1,0)),
+                    panel = function(...){
+                        panel.points(...)
+                        panel.loess(..., span = .6, col.line = "blue")
+                    })
+samescale
+
+## Call addScales and then update scale. This uses update.scaledTrellis:
+
+update(addScales(samescale, scaleType = "region"),
+       scales =  list(y = list(relation = "free", draw = FALSE)))
+
+## This will generate a warning message, shown after the examples complete,
+## and useless scaleline regions.
+##
+## Repeat, but now update the scaleline argument of addScales() also:
+
+update(addScales(samescale, scaleType = "region"),
+       scaleline = list(h = TRUE, v = FALSE),
+       scales =  list(y = list(relation = "free", draw = FALSE))
+)
+
+## The updated scale regions are now appropriate.
+## This could also have been done by first updating the trellis object
+## (which would use the update.trellis method) and **then** calling
+## addScales() on that, i.e.
+
+addScales(update(samescale, scales =
+                     list(y = list(relation = "free", draw = FALSE))),
+          scaleType = "region")
 ## cleanup
-rm(ads.1, crm, pcols, wh, state.smpl)
+rm(ads.1, crm, pcols, wh, state.smpl, samescale,
+   scaling, x, y, f)
+
 }
 \keyword{hplot}
 \keyword{aplot}
